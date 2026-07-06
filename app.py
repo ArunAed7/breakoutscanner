@@ -108,6 +108,63 @@ st.markdown(
     color: #cbd5e1;
     opacity: 0.92;
 }
+.summary-metrics {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+.summary-metric {
+    flex: 1 1 120px;
+    min-width: 110px;
+    padding: 0.5rem 0.65rem;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.08);
+}
+.summary-metric .sm-label {
+    font-size: 0.68rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 0.15rem;
+    opacity: 0.9;
+}
+.summary-metric .sm-value {
+    font-size: 0.95rem;
+    font-weight: 700;
+    line-height: 1.25;
+    word-break: break-word;
+}
+.summary-metric.breakouts {
+    background: linear-gradient(145deg, #1e1b4b 0%, #312e81 100%);
+    border-left: 3px solid #a78bfa;
+}
+.summary-metric.breakouts .sm-label { color: #c4b5fd; }
+.summary-metric.breakouts .sm-value { color: #ede9fe; }
+.summary-metric.bullish {
+    background: linear-gradient(145deg, #052e16 0%, #14532d 100%);
+    border-left: 3px solid #4ade80;
+}
+.summary-metric.bullish .sm-label { color: #86efac; }
+.summary-metric.bullish .sm-value { color: #dcfce7; }
+.summary-metric.bearish {
+    background: linear-gradient(145deg, #450a0a 0%, #7f1d1d 100%);
+    border-left: 3px solid #f87171;
+}
+.summary-metric.bearish .sm-label { color: #fca5a5; }
+.summary-metric.bearish .sm-value { color: #fee2e2; }
+.summary-metric.symbols {
+    background: linear-gradient(145deg, #0c4a6e 0%, #075985 100%);
+    border-left: 3px solid #38bdf8;
+}
+.summary-metric.symbols .sm-label { color: #7dd3fc; }
+.summary-metric.symbols .sm-value { color: #e0f2fe; }
+.summary-metric.scanned {
+    background: linear-gradient(145deg, #451a03 0%, #78350f 100%);
+    border-left: 3px solid #fbbf24;
+}
+.summary-metric.scanned .sm-label { color: #fcd34d; }
+.summary-metric.scanned .sm-value { color: #fef3c7; font-size: 0.82rem; font-weight: 600; }
 </style>
 """,
     unsafe_allow_html=True,
@@ -154,6 +211,41 @@ def _render_disclaimer_sidebar() -> None:
     st.divider()
     st.markdown("#### ⚖️ Legal disclaimer")
     st.markdown(_DISCLAIMER_SIDEBAR)
+
+
+def _render_summary_metrics(
+    *,
+    breakouts: int,
+    bullish: int,
+    bearish: int,
+    symbols_scanned: int | str,
+    scanned_label: str,
+) -> None:
+    html = f"""
+<div class="summary-metrics">
+  <div class="summary-metric breakouts">
+    <div class="sm-label">Breakouts</div>
+    <div class="sm-value">{breakouts}</div>
+  </div>
+  <div class="summary-metric bullish">
+    <div class="sm-label">Bullish</div>
+    <div class="sm-value">{bullish}</div>
+  </div>
+  <div class="summary-metric bearish">
+    <div class="sm-label">Bearish</div>
+    <div class="sm-value">{bearish}</div>
+  </div>
+  <div class="summary-metric symbols">
+    <div class="sm-label">Symbols Scanned</div>
+    <div class="sm-value">{symbols_scanned}</div>
+  </div>
+  <div class="summary-metric scanned">
+    <div class="sm-label">Last Scanned</div>
+    <div class="sm-value">{scanned_label}</div>
+  </div>
+</div>
+"""
+    _render_card_html(html)
 
 
 def _render_last_scan_panel(meta: dict, results: pd.DataFrame | None = None) -> None:
@@ -542,12 +634,13 @@ if "breakout_results" in st.session_state:
             meta.get("scanned_at") or meta.get("saved_at"),
             short=True,
         )
-        c1, c2, c3, c4, c5 = st.columns(5)
-        c1.metric("Breakouts", len(results))
-        c2.metric("Bullish", bull)
-        c3.metric("Bearish", bear)
-        c4.metric("Symbols Scanned", n_sym)
-        c5.metric("Last Scanned", scanned_label)
+        _render_summary_metrics(
+            breakouts=len(results),
+            bullish=bull,
+            bearish=bear,
+            symbols_scanned=n_sym,
+            scanned_label=scanned_label,
+        )
         if meta.get("mode"):
             st.caption(f"Mode: **{meta['mode']}** · cached results — use **Force Refresh Scan** to update")
 

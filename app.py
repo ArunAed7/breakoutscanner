@@ -203,6 +203,78 @@ st.markdown(
 .cpr-legend-item.wide { background: rgba(220,38,38,0.35); color: #fecaca; }
 .cpr-legend-item.virgin { background: rgba(22,163,74,0.25); color: #86efac; }
 .cpr-legend-item.touched { background: rgba(220,38,38,0.25); color: #fca5a5; }
+.cpr-meta-panel {
+    background: rgba(59,130,246,0.08);
+    border: 1px solid rgba(59,130,246,0.22);
+    border-radius: 10px;
+    padding: 0.55rem 0.8rem;
+    margin: 0.35rem 0 0.85rem;
+    font-size: 0.78rem;
+    line-height: 1.5;
+    color: #cbd5e1;
+}
+.cpr-meta-panel strong { color: #e2e8f0; font-weight: 600; }
+.cpr-meta-panel code {
+    font-size: 0.74rem;
+    color: #86efac;
+    background: rgba(15,23,42,0.45);
+    padding: 0.1rem 0.35rem;
+    border-radius: 4px;
+}
+.summary-metric.cpr-total {
+    background: linear-gradient(145deg, #1e1b4b 0%, #312e81 100%);
+    border-left: 3px solid #a78bfa;
+}
+.summary-metric.cpr-total .sm-label { color: #c4b5fd; }
+.summary-metric.cpr-total .sm-value { color: #ede9fe; }
+.summary-metric.cpr-virgin {
+    background: linear-gradient(145deg, #052e16 0%, #14532d 100%);
+    border-left: 3px solid #4ade80;
+}
+.summary-metric.cpr-virgin .sm-label { color: #86efac; }
+.summary-metric.cpr-virgin .sm-value { color: #dcfce7; }
+.summary-metric.cpr-vw {
+    background: linear-gradient(145deg, #2e1065 0%, #4c1d95 100%);
+    border-left: 3px solid #a78bfa;
+}
+.summary-metric.cpr-vw .sm-label { color: #ddd6fe; }
+.summary-metric.cpr-vw .sm-value { color: #f5f3ff; }
+.summary-metric.cpr-vn {
+    background: linear-gradient(145deg, #172554 0%, #1e3a8a 100%);
+    border-left: 3px solid #60a5fa;
+}
+.summary-metric.cpr-vn .sm-label { color: #bfdbfe; }
+.summary-metric.cpr-vn .sm-value { color: #eff6ff; }
+.summary-metric.cpr-narrow {
+    background: linear-gradient(145deg, #451a03 0%, #78350f 100%);
+    border-left: 3px solid #fbbf24;
+}
+.summary-metric.cpr-narrow .sm-label { color: #fcd34d; }
+.summary-metric.cpr-narrow .sm-value { color: #fef3c7; }
+.summary-metric.cpr-cutoff {
+    background: linear-gradient(145deg, #3b0764 0%, #581c87 100%);
+    border-left: 3px solid #e879f9;
+}
+.summary-metric.cpr-cutoff .sm-label { color: #f0abfc; }
+.summary-metric.cpr-cutoff .sm-value { color: #fae8ff; font-size: 0.88rem; }
+.cpr-detail-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem 0.85rem;
+    margin: 0.35rem 0 0.75rem;
+    padding: 0.55rem 0.75rem;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(15,23,42,0.35);
+}
+.cpr-detail-stat {
+    font-size: 0.8rem;
+    color: #cbd5e1;
+}
+.cpr-detail-stat b {
+    color: #f8fafc;
+    font-weight: 600;
+}
 </style>
 """,
     unsafe_allow_html=True,
@@ -294,6 +366,68 @@ def _render_summary_metrics(
     <div class="sm-label">Last Scanned</div>
     <div class="sm-value">{scanned_label}</div>
   </div>
+</div>
+"""
+    _render_card_html(html)
+
+
+def _render_cpr_summary_metrics(
+    *,
+    total: int,
+    virgin: int,
+    v_w: int,
+    v_n: int,
+    narrow: int,
+    narrow_pct: float,
+    scanned_label: str,
+) -> None:
+    html = f"""
+<div class="summary-metrics">
+  <div class="summary-metric cpr-total">
+    <div class="sm-label">Total</div>
+    <div class="sm-value">{total}</div>
+  </div>
+  <div class="summary-metric cpr-virgin">
+    <div class="sm-label">Virgin</div>
+    <div class="sm-value">{virgin}</div>
+  </div>
+  <div class="summary-metric cpr-vw">
+    <div class="sm-label">V + W</div>
+    <div class="sm-value">{v_w}</div>
+  </div>
+  <div class="summary-metric cpr-vn">
+    <div class="sm-label">V + N</div>
+    <div class="sm-value">{v_n}</div>
+  </div>
+  <div class="summary-metric cpr-narrow">
+    <div class="sm-label">Narrow</div>
+    <div class="sm-value">{narrow}</div>
+  </div>
+  <div class="summary-metric cpr-cutoff">
+    <div class="sm-label">Narrow cutoff</div>
+    <div class="sm-value">≤{narrow_pct:g}%</div>
+  </div>
+  <div class="summary-metric scanned">
+    <div class="sm-label">Last scan</div>
+    <div class="sm-value">{scanned_label or "—"}</div>
+  </div>
+</div>
+"""
+    _render_card_html(html)
+
+
+def _render_cpr_session_panel(
+    *,
+    session_date: object,
+    scan_tf: str,
+    universe_choice: str,
+    narrow_pct: float,
+) -> None:
+    html = f"""
+<div class="cpr-meta-panel">
+  <strong>Session {session_date}</strong> · {scan_tf} CPR · {universe_choice} ·
+  narrow = bottom {narrow_pct:g}% of 1Y width history ·
+  cached in <code>data_cache/cpr_scan_results.csv</code>
 </div>
 """
     _render_card_html(html)
@@ -904,19 +1038,21 @@ Today's CPR from yesterday's OHLC. <strong>Virgin</strong> = price has not touch
         else results["session_date"].iloc[0] if "session_date" in results.columns else "—"
     )
 
-    m1, m2, m3, m4, m5, m6, m7 = st.columns(7)
-    m1.metric("Total", len(filtered))
-    m2.metric("Virgin", _cpr_metric_count(filtered, "is_virgin"))
-    m3.metric("V + W", _cpr_metric_count(filtered, "type", match="V+W"))
-    m4.metric("V + N", _cpr_metric_count(filtered, "type", match="V+N"))
-    m5.metric("Narrow", _cpr_metric_count(filtered, "is_narrow"))
-    m6.metric("Narrow cutoff", f"≤{narrow_pct:g}%")
-    m7.metric("Last scan", scanned_label or "—")
+    _render_cpr_summary_metrics(
+        total=len(filtered),
+        virgin=_cpr_metric_count(filtered, "is_virgin"),
+        v_w=_cpr_metric_count(filtered, "type", match="V+W"),
+        v_n=_cpr_metric_count(filtered, "type", match="V+N"),
+        narrow=_cpr_metric_count(filtered, "is_narrow"),
+        narrow_pct=narrow_pct,
+        scanned_label=scanned_label or "—",
+    )
 
-    st.caption(
-        f"Session **{session_date}** · {scan_tf} CPR · **{universe_choice}** · "
-        f"narrow = bottom **{narrow_pct:g}%** of 1Y width history · "
-        f"cached in `data_cache/cpr_scan_results.csv`"
+    _render_cpr_session_panel(
+        session_date=session_date,
+        scan_tf=scan_tf,
+        universe_choice=universe_choice,
+        narrow_pct=narrow_pct,
     )
 
     display = _style_cpr_results(filtered)
@@ -938,14 +1074,21 @@ Today's CPR from yesterday's OHLC. <strong>Virgin</strong> = price has not touch
             row = results[results["symbol"].astype(str) == pick]
         if not row.empty:
             r = row.iloc[0]
-            c1, c2, c3, c4, c5 = st.columns(5)
-            c1.metric("CPR Type", r.get("type", "—"))
-            c2.metric("Virgin?", "Yes" if r.get("is_virgin") else "Touched")
             width_pctile = r.get("width_percentile")
-            c3.metric("Width %ile", f"{float(width_pctile):.1f}" if pd.notna(width_pctile) else "—")
-            c4.metric("TC / BC", f"{r.get('tc', '—')} / {r.get('bc', '—')}")
             dist = r.get("distance_pct")
-            c5.metric("Distance", f"{float(dist):+.2f}%" if pd.notna(dist) else "—")
+            width_txt = f"{float(width_pctile):.1f}" if pd.notna(width_pctile) else "—"
+            dist_txt = f"{float(dist):+.2f}%" if pd.notna(dist) else "—"
+            _render_card_html(
+                f"""
+<div class="cpr-detail-stats">
+  <span class="cpr-detail-stat">Type <b>{r.get("type", "—")}</b></span>
+  <span class="cpr-detail-stat">Virgin <b>{"Yes" if r.get("is_virgin") else "Touched"}</b></span>
+  <span class="cpr-detail-stat">Width %ile <b>{width_txt}</b></span>
+  <span class="cpr-detail-stat">TC / BC <b>{r.get("tc", "—")} / {r.get("bc", "—")}</b></span>
+  <span class="cpr-detail-stat">Distance <b>{dist_txt}</b></span>
+</div>
+"""
+            )
 
         st.download_button(
             "Download CPR CSV",

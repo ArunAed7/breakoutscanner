@@ -4,6 +4,8 @@ A multi-timeframe stock breakout scanner for **NIFTY 500** constituents. Detects
 
 Built with Python, [yfinance](https://github.com/ranaroussi/yfinance), and [Streamlit](https://streamlit.io/).
 
+**Live app:** [breakoutscanner.streamlit.app](https://breakoutscanner.streamlit.app/) — try it in your browser (no install).
+
 **Repository:** [github.com/Elicherla01/breakoutscanner](https://github.com/Elicherla01/breakoutscanner)
 
 ## Screenshot
@@ -28,6 +30,14 @@ Streamlit dashboard — sidebar scan settings, force-refresh cache, and card vie
 ---
 
 ## Quick start
+
+### Try online (recommended)
+
+Open the hosted app — configure scan settings in the sidebar and click **Force Refresh Scan**:
+
+**👉 [https://breakoutscanner.streamlit.app/](https://breakoutscanner.streamlit.app/)**
+
+### Run locally
 
 ```bash
 git clone https://github.com/Elicherla01/breakoutscanner.git
@@ -88,6 +98,7 @@ breakoutscanner/
 │   └── images/
 │       └── dashboard-screenshot.png
 ├── README.md
+├── DISCLAIMER.md
 └── IMPLEMENTATION.md   # Detailed setup & operations guide
 ```
 
@@ -132,7 +143,17 @@ Cached files are stored under `data_cache/` (gitignored).
 
 ## Disclaimer
 
-This tool is for **educational and research purposes only**. It is not investment advice. Past breakouts do not guarantee future performance. Verify signals independently before trading.
+> **Not financial advice.** See the full [DISCLAIMER.md](DISCLAIMER.md) before using this software.
+
+This software is for **informational, educational, and research purposes only**. It does **not** constitute investment, trading, tax, or legal advice, and does not create an adviser–client relationship.
+
+- **Risk of loss:** Trading securities involves substantial risk; you may lose some or all of your capital.  
+- **No guarantees:** Signals are algorithmic outputs from historical data; past breakouts do not guarantee future results.  
+- **Data limitations:** Prices from third-party sources (e.g. Yahoo Finance) may be delayed, incomplete, or inaccurate.  
+- **Your responsibility:** Perform independent due diligence and consult a **SEBI-registered** or otherwise qualified financial adviser before trading.  
+- **No liability:** Authors and contributors are not liable for losses arising from use of this tool.
+
+By using this repository or application, you agree to the terms in [DISCLAIMER.md](DISCLAIMER.md).
 
 ---
 

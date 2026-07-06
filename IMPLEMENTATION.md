@@ -2,6 +2,8 @@
 
 Step-by-step guide to install, configure, run, and maintain the NIFTY 500 Breakout Scanner.
 
+> **Legal:** Read [DISCLAIMER.md](DISCLAIMER.md) before using this software. It is not investment advice.
+
 ---
 
 ## 1. Prerequisites
@@ -207,7 +209,11 @@ STRICT_ATR_PERIOD = 14
 streamlit run app.py --server.address 0.0.0.0 --server.port 8501
 ```
 
-### Streamlit Community Cloud
+### Streamlit Community Cloud (live demo)
+
+**Hosted app:** [https://breakoutscanner.streamlit.app/](https://breakoutscanner.streamlit.app/)
+
+To deploy or redeploy:
 
 1. Push repo to GitHub (this repository).
 2. Go to [share.streamlit.io](https://share.streamlit.io).
@@ -235,10 +241,10 @@ Note: Cloud deploy will re-download prices each session; local `data_cache/` is 
 
 - [x] Source code in repository root
 - [x] `requirements.txt` pinned loosely (`>=`)
-- [x] `README.md` + `IMPLEMENTATION.md`
+- [x] `README.md` + `IMPLEMENTATION.md` + `DISCLAIMER.md`
 - [x] `.gitignore` excludes `data_cache/` and secrets
 - [x] MIT `LICENSE`
-- [ ] GitHub repo: [Elicherla01/breakoutscanner](https://github.com/Elicherla01/breakoutscanner)
+- [x] GitHub repo: [Elicherla01/breakoutscanner](https://github.com/Elicherla01/breakoutscanner)
 
 ---
 

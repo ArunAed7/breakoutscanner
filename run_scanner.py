@@ -6,8 +6,17 @@ from __future__ import annotations
 import argparse
 import sys
 
-from config import STRICT_VOL_MULT, TIMEFRAMES, TIMEFRAME_ORDER, sort_timeframes
-from data_loader import load_universe_symbols, select_scan_universe
+from config import (
+    STRICT_VOL_MULT,
+    TIMEFRAMES,
+    TIMEFRAME_ORDER,
+    UNIVERSE_CHOICES,
+    UNIVERSE_FNO,
+    UNIVERSE_NIFTY50,
+    UNIVERSE_NIFTY500,
+    sort_timeframes,
+)
+from data_loader import load_universe_symbols, resolve_universe_symbols
 from results_store import save_scan_results
 from scanner import filter_results, scan_universe
 
@@ -24,7 +33,14 @@ def main() -> int:
         choices=list(TIMEFRAMES.keys()),
         help="Timeframe(s): 1H, 1D, 1W (repeatable)",
     )
-    scan.add_argument("--max", type=int, default=500, help="Max symbols to scan (even sample if < 500)")
+    scan.add_argument("--max", type=int, default=500, help="Max symbols for NIFTY 500 (even sample if < size)")
+    scan.add_argument(
+        "--universe",
+        "-u",
+        choices=["nifty50", "fno", "nifty500"],
+        default="nifty500",
+        help="Symbol universe: nifty50, fno (F&O stocks), or nifty500",
+    )
     scan.add_argument("--vol-mult", type=float, default=None, help="Min volume ratio vs average (strict default 1.5)")
     scan.add_argument("--lookback", type=int, default=20, help="Donchian lookback bars")
     scan.add_argument(
@@ -54,14 +70,24 @@ def main() -> int:
         return 0
 
     timeframes = sort_timeframes(args.timeframe or list(TIMEFRAME_ORDER))
-    universe = load_universe_symbols()
-    symbols = select_scan_universe(universe, args.max)
+    nifty500 = load_universe_symbols()
+    universe_map = {
+        "nifty50": UNIVERSE_NIFTY50,
+        "fno": UNIVERSE_FNO,
+        "nifty500": UNIVERSE_NIFTY500,
+    }
+    universe_choice = universe_map[args.universe]
+    symbols, universe_sample, universe_total = resolve_universe_symbols(
+        universe_choice,
+        nifty500,
+        max_symbols=args.max if args.universe == "nifty500" else None,
+    )
     dir_filter = None if args.direction == "both" else args.direction
     vol_mult = args.vol_mult
     if vol_mult is None:
         vol_mult = STRICT_VOL_MULT if args.mode == "strict" else 1.25
 
-    print(f"Scanning {len(symbols)} symbols on {', '.join(timeframes)} ({args.mode})…")
+    print(f"Scanning {len(symbols)} symbols ({universe_choice}) on {', '.join(timeframes)} ({args.mode})…")
 
     def progress(done: int, total: int, label: str) -> None:
         if done % 25 == 0 or done == total:
@@ -99,8 +125,9 @@ def main() -> int:
         df,
         {
             "symbols": len(symbols),
-            "universe_total": len(universe),
-            "universe_sample": "even" if args.max < len(universe) else "full",
+            "universe_total": universe_total,
+            "universe_sample": universe_sample,
+            "universe_choice": universe_choice,
             "timeframes": timeframes,
             "mode": "Strict (ATR)" if args.mode == "strict" else "Standard",
             "breakout_mode": args.mode,

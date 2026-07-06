@@ -10,7 +10,15 @@ from zoneinfo import ZoneInfo
 
 import pandas as pd
 
-from config import SCAN_INFO_CSV, SCAN_META_JSON, SCAN_RESULTS_CSV, ensure_dirs
+from config import (
+    CPR_SCAN_INFO_CSV,
+    CPR_SCAN_META_JSON,
+    CPR_SCAN_RESULTS_CSV,
+    SCAN_INFO_CSV,
+    SCAN_META_JSON,
+    SCAN_RESULTS_CSV,
+    ensure_dirs,
+)
 
 _BOOL_COLS = ("is_52w_high", "strong_close")
 _DISPLAY_TZ = ZoneInfo("Asia/Kolkata")
@@ -148,6 +156,91 @@ def load_scan_results() -> tuple[Optional[pd.DataFrame], dict[str, Any]]:
 
 def cached_scan_available() -> bool:
     return SCAN_RESULTS_CSV.is_file()
+
+
+_CPR_BOOL_COLS = ("is_virgin", "is_narrow")
+_CPR_INFO_COLUMNS = (
+    "scanned_at",
+    "scanned_at_display",
+    "symbols_scanned",
+    "universe_total",
+    "universe_sample",
+    "timeframe",
+    "narrow_percentile",
+    "virgin_count",
+    "result_count",
+)
+
+
+def save_cpr_results(df: pd.DataFrame, meta: dict[str, Any]) -> Path:
+    """Write CPR scan results and metadata to data_cache/."""
+    ensure_dirs()
+    scanned_at = datetime.now(_DISPLAY_TZ).replace(microsecond=0)
+    scanned_iso = scanned_at.isoformat(timespec="seconds")
+    scanned_display = format_scanned_at(scanned_at)
+
+    out = df.copy()
+    out["scanned_at"] = scanned_iso
+    out.to_csv(CPR_SCAN_RESULTS_CSV, index=False)
+
+    info_row = {
+        "scanned_at": scanned_iso,
+        "scanned_at_display": scanned_display,
+        "symbols_scanned": meta.get("symbols", ""),
+        "universe_total": meta.get("universe_total", ""),
+        "universe_sample": meta.get("universe_sample", ""),
+        "timeframe": meta.get("timeframe", "Daily"),
+        "narrow_percentile": meta.get("narrow_percentile", ""),
+        "virgin_count": int(out["is_virgin"].sum()) if "is_virgin" in out.columns else 0,
+        "result_count": len(out),
+    }
+    pd.DataFrame([info_row], columns=list(_CPR_INFO_COLUMNS)).to_csv(CPR_SCAN_INFO_CSV, index=False)
+
+    payload = {
+        **meta,
+        "scanned_at": scanned_iso,
+        "scanned_at_display": scanned_display,
+        "saved_at": scanned_iso,
+        "row_count": len(out),
+    }
+    CPR_SCAN_META_JSON.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    return CPR_SCAN_RESULTS_CSV
+
+
+def load_cpr_scan_info() -> dict[str, Any]:
+    if CPR_SCAN_INFO_CSV.is_file():
+        try:
+            info = pd.read_csv(CPR_SCAN_INFO_CSV).iloc[0].to_dict()
+            return {k: (None if pd.isna(v) else v) for k, v in info.items()}
+        except Exception:
+            pass
+    if CPR_SCAN_META_JSON.is_file():
+        try:
+            return json.loads(CPR_SCAN_META_JSON.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+    return {}
+
+
+def load_cpr_results() -> tuple[Optional[pd.DataFrame], dict[str, Any]]:
+    if not CPR_SCAN_RESULTS_CSV.is_file():
+        return None, {}
+    try:
+        df = pd.read_csv(CPR_SCAN_RESULTS_CSV)
+        for col in _CPR_BOOL_COLS:
+            if col in df.columns:
+                df[col] = df[col].map(_parse_bool)
+        for col in ("source_date", "session_date"):
+            if col in df.columns:
+                df[col] = pd.to_datetime(df[col], errors="coerce").dt.date
+        meta = load_cpr_scan_info()
+        return df, meta
+    except Exception:
+        return None, {}
+
+
+def cached_cpr_scan_available() -> bool:
+    return CPR_SCAN_RESULTS_CSV.is_file()
 
 
 def _parse_bool(val: object) -> bool:

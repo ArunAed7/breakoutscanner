@@ -17,13 +17,21 @@ from config import (
     DEFAULT_WATCHLIST,
     HOURLY_PERIOD,
     LOOKBACK_DAYS,
+    NIFTY50_CACHE,
+    NIFTY50_CACHE_SIBLING,
+    NIFTY50_URL,
     NIFTY500_URL,
     STOCKDNA_UNIVERSE,
     UNIVERSE_CACHE,
+    UNIVERSE_CHOICES,
+    UNIVERSE_FNO,
+    UNIVERSE_NIFTY50,
+    UNIVERSE_NIFTY500,
     YAHOO_TICKER_MAP,
     YFINANCE_SUFFIX,
     ensure_dirs,
 )
+from fno_loader import load_fno_symbols
 
 _YF_LOCK = threading.Lock()
 
@@ -81,6 +89,75 @@ def load_universe_symbols() -> list[str]:
         except Exception:
             continue
     return DEFAULT_WATCHLIST.copy()
+
+
+def _read_symbol_column(path: Path) -> list[str]:
+    df = pd.read_csv(path)
+    col = "symbol" if "symbol" in df.columns else ("Symbol" if "Symbol" in df.columns else df.columns[0])
+    return df[col].dropna().astype(str).str.upper().str.strip().tolist()
+
+
+def load_nifty50_symbols() -> list[str]:
+    """Load NIFTY 50 constituents from cache, sibling project, or NSE."""
+    ensure_dirs()
+    for path in (NIFTY50_CACHE, NIFTY50_CACHE_SIBLING):
+        if path.is_file():
+            try:
+                symbols = _read_symbol_column(path)
+                if symbols:
+                    if path != NIFTY50_CACHE:
+                        pd.DataFrame({"symbol": symbols}).to_csv(NIFTY50_CACHE, index=False)
+                    return sorted(set(symbols))
+            except Exception:
+                pass
+
+    urls = [
+        NIFTY50_URL,
+        "https://www1.nseindia.com/content/indices/ind_nifty50list.csv",
+    ]
+    for url in urls:
+        try:
+            df = pd.read_csv(url)
+            col = "Symbol" if "Symbol" in df.columns else df.columns[0]
+            symbols = df[col].dropna().astype(str).str.upper().str.strip().tolist()
+            if symbols:
+                pd.DataFrame({"symbol": symbols}).to_csv(NIFTY50_CACHE, index=False)
+                return sorted(set(symbols))
+        except Exception:
+            continue
+
+    # Fallback: first 50 names from NIFTY 500 if NSE fetch fails
+    nifty500 = load_universe_symbols()
+    return select_scan_universe(nifty500, min(50, len(nifty500)))
+
+
+def resolve_universe_symbols(
+    choice: str,
+    nifty500: list[str] | None = None,
+    *,
+    max_symbols: int | None = None,
+) -> tuple[list[str], str, int]:
+    """
+    Resolve sidebar universe choice to a symbol list.
+
+    Returns (symbols, sample_mode, universe_total) where sample_mode is
+    'nifty50', 'fno', 'full', or 'even'.
+    """
+    choice = choice or UNIVERSE_NIFTY500
+    if choice == UNIVERSE_NIFTY50:
+        symbols = load_nifty50_symbols()
+        return symbols, "nifty50", len(symbols)
+
+    if choice == UNIVERSE_FNO:
+        symbols = load_fno_symbols()
+        return symbols, "fno", len(symbols)
+
+    pool = nifty500 if nifty500 is not None else load_universe_symbols()
+    total = len(pool)
+    cap = max_symbols if max_symbols is not None else total
+    symbols = select_scan_universe(pool, cap)
+    mode = "full" if cap >= total else "even"
+    return symbols, mode, total
 
 
 def select_scan_universe(symbols: list[str], max_symbols: int) -> list[str]:

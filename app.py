@@ -275,6 +275,81 @@ st.markdown(
     color: #f8fafc;
     font-weight: 600;
 }
+.cpr-top-stats {
+    display: flex;
+    gap: 0.65rem;
+    margin-top: 0.15rem;
+}
+.cpr-top-stat {
+    flex: 1 1 120px;
+    padding: 0.45rem 0.6rem;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(15,23,42,0.35);
+}
+.cpr-top-label {
+    font-size: 0.68rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #94a3b8;
+    margin-bottom: 0.2rem;
+}
+.cpr-top-value {
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: #f8fafc;
+    line-height: 1.3;
+    word-break: break-word;
+}
+.cpr-top-value.time {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #fde68a;
+}
+.cpr-card {
+    padding: 0.9rem 1rem;
+    border-radius: 12px;
+    margin-bottom: 0.75rem;
+    border: 1px solid rgba(255,255,255,0.1);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.35);
+    min-height: 150px;
+}
+.cpr-card.cpr-vw {
+    background: linear-gradient(145deg, #2e1065 0%, #4c1d95 45%, #5b21b6 100%);
+    border-left: 5px solid #a78bfa;
+}
+.cpr-card.cpr-vn {
+    background: linear-gradient(145deg, #172554 0%, #1e3a8a 45%, #1d4ed8 100%);
+    border-left: 5px solid #60a5fa;
+}
+.cpr-card.cpr-v {
+    background: linear-gradient(145deg, #052e16 0%, #14532d 45%, #166534 100%);
+    border-left: 5px solid #4ade80;
+}
+.cpr-card.cpr-wide {
+    background: linear-gradient(145deg, #450a0a 0%, #7f1d1d 45%, #991b1b 100%);
+    border-left: 5px solid #f87171;
+}
+.cpr-card.cpr-narrow {
+    background: linear-gradient(145deg, #451a03 0%, #78350f 45%, #92400e 100%);
+    border-left: 5px solid #fbbf24;
+}
+.cpr-card.cpr-touched {
+    background: linear-gradient(145deg, #1f2937 0%, #374151 45%, #4b5563 100%);
+    border-left: 5px solid #9ca3af;
+}
+.cpr-card .card-pill.virgin {
+    background: rgba(74, 222, 128, 0.22);
+    color: #bbf7d0;
+}
+.cpr-card .card-pill.touched {
+    background: rgba(248, 113, 113, 0.22);
+    color: #fecaca;
+}
+.cpr-card .card-pill.type-vw { background: rgba(167, 139, 250, 0.28); color: #ede9fe; }
+.cpr-card .card-pill.type-vn { background: rgba(96, 165, 250, 0.28); color: #dbeafe; }
+.cpr-card .card-pill.type-wide { background: rgba(248, 113, 113, 0.28); color: #fee2e2; }
 </style>
 """,
     unsafe_allow_html=True,
@@ -295,6 +370,21 @@ _CPR_TYPE_COLORS = {
 }
 
 _CPR_TREND_ICONS = {"above": "🟢 ↑", "below": "🔴 ↓", "inside": "🟡 •"}
+
+_CPR_CARD_CLASS = {
+    "V+W": "cpr-vw",
+    "V+N": "cpr-vn",
+    "V": "cpr-v",
+    "WIDE": "cpr-wide",
+    "NARROW": "cpr-narrow",
+    "TOUCHED": "cpr-touched",
+}
+
+_CPR_TYPE_PILL = {
+    "V+W": "type-vw",
+    "V+N": "type-vn",
+    "WIDE": "type-wide",
+}
 
 _INDEX_SYMBOLS = frozenset({"VIX", "INDIAVIX", "NIFTY", "BANKNIFTY", "SENSEX"})
 
@@ -371,6 +461,32 @@ def _render_summary_metrics(
     _render_card_html(html)
 
 
+def _cpr_scanned_label(meta: dict | None, *, short: bool = True) -> str:
+    if not meta:
+        return "Not scanned yet"
+    label = meta.get("scanned_at_display") or format_scanned_at(
+        meta.get("scanned_at") or meta.get("saved_at"),
+        short=short,
+    )
+    return label if label and label != "—" else "Not scanned yet"
+
+
+def _render_cpr_top_stats(*, symbol_count: int, scanned_label: str) -> None:
+    html = f"""
+<div class="cpr-top-stats">
+  <div class="cpr-top-stat">
+    <div class="cpr-top-label">Symbols in scan</div>
+    <div class="cpr-top-value">{symbol_count}</div>
+  </div>
+  <div class="cpr-top-stat">
+    <div class="cpr-top-label">Last scanned</div>
+    <div class="cpr-top-value time">{scanned_label}</div>
+  </div>
+</div>
+"""
+    _render_card_html(html)
+
+
 def _render_cpr_summary_metrics(
     *,
     total: int,
@@ -379,7 +495,6 @@ def _render_cpr_summary_metrics(
     v_n: int,
     narrow: int,
     narrow_pct: float,
-    scanned_label: str,
 ) -> None:
     html = f"""
 <div class="summary-metrics">
@@ -407,10 +522,6 @@ def _render_cpr_summary_metrics(
     <div class="sm-label">Narrow cutoff</div>
     <div class="sm-value">≤{narrow_pct:g}%</div>
   </div>
-  <div class="summary-metric scanned">
-    <div class="sm-label">Last scan</div>
-    <div class="sm-value">{scanned_label or "—"}</div>
-  </div>
 </div>
 """
     _render_card_html(html)
@@ -422,10 +533,11 @@ def _render_cpr_session_panel(
     scan_tf: str,
     universe_choice: str,
     narrow_pct: float,
+    scanned_label: str = "",
 ) -> None:
     html = f"""
 <div class="cpr-meta-panel">
-  <strong>Session {session_date}</strong> · {scan_tf} CPR · {universe_choice} ·
+  <strong>Last scanned {scanned_label}</strong> · Session {session_date} · {scan_tf} CPR · {universe_choice} ·
   narrow = bottom {narrow_pct:g}% of 1Y width history ·
   cached in <code>data_cache/cpr_scan_results.csv</code>
 </div>
@@ -655,6 +767,82 @@ def _cpr_status_rate(row: pd.Series) -> str:
         return f"{float(ltp):,.2f}" if ltp is not None and pd.notna(ltp) else "—"
     cpr_type = str(row.get("type", "—"))
     return cpr_type.replace("+", " + ")
+
+
+def _cpr_card_html(row: pd.Series) -> str:
+    cpr_type = str(row.get("type", "—"))
+    card_cls = _CPR_CARD_CLASS.get(cpr_type, "cpr-touched")
+    is_virgin = bool(row.get("is_virgin"))
+    virgin_label = "VIRGIN" if is_virgin else "TOUCHED"
+    virgin_cls = "virgin" if is_virgin else "touched"
+    trend = str(row.get("trend", ""))
+    trend_label = _CPR_TREND_ICONS.get(trend, "—")
+    status_rate = _cpr_status_rate(row)
+    type_pill_cls = _CPR_TYPE_PILL.get(cpr_type, "")
+
+    dist = row.get("distance_pct")
+    dist_txt = f"{float(dist):+.2f}%" if dist is not None and pd.notna(dist) else "—"
+    ltp = row.get("ltp")
+    ltp_txt = f"₹{float(ltp):,.2f}" if ltp is not None and pd.notna(ltp) else "—"
+    width_pct = row.get("width_pct")
+    width_pct_txt = f"{float(width_pct):.3f}%" if width_pct is not None and pd.notna(width_pct) else "—"
+    width_pctile = row.get("width_percentile")
+    width_pctile_txt = f"{float(width_pctile):.1f}" if width_pctile is not None and pd.notna(width_pctile) else "—"
+    tc = row.get("tc")
+    bc = row.get("bc")
+    pivot = row.get("pivot")
+    tc_txt = f"₹{float(tc):,.2f}" if tc is not None and pd.notna(tc) else "—"
+    bc_txt = f"₹{float(bc):,.2f}" if bc is not None and pd.notna(bc) else "—"
+    pivot_txt = f"₹{float(pivot):,.2f}" if pivot is not None and pd.notna(pivot) else "—"
+    days_virgin = int(row.get("days_virgin", 0) or 0)
+    source_date = row.get("source_date", "—")
+    session_date = row.get("session_date", "—")
+
+    badges = [
+        f'<span class="card-pill {type_pill_cls}">{status_rate}</span>',
+        f'<span class="card-pill {virgin_cls}">{virgin_label}</span>',
+        f'<span class="card-pill">{trend_label}</span>',
+    ]
+    if cpr_type in ("V+W", "V+N", "WIDE", "NARROW") and status_rate != cpr_type.replace("+", " + "):
+        badges.insert(0, f'<span class="card-pill">{cpr_type.replace("+", " + ")}</span>')
+
+    stats_row1 = [
+        f'<span class="card-stat">LTP <b>{ltp_txt}</b></span>',
+        f'<span class="card-stat">Distance <b>{dist_txt}</b></span>',
+        f'<span class="card-stat">Width <b>{width_pct_txt}</b></span>',
+        f'<span class="card-stat">%ile <b>{width_pctile_txt}</b></span>',
+    ]
+    stats_row2 = [
+        f'<span class="card-stat">TC <b>{tc_txt}</b></span>',
+        f'<span class="card-stat">BC <b>{bc_txt}</b></span>',
+        f'<span class="card-stat">Pivot <b>{pivot_txt}</b></span>',
+    ]
+
+    return (
+        f'<div class="cpr-card {card_cls}">'
+        f'<div class="card-top">'
+        f'<span class="card-symbol">{row.get("symbol", "—")}</span>'
+        f'<span class="card-badges">{"".join(badges)}</span>'
+        f"</div>"
+        f'<div class="card-stat-row">{"".join(stats_row1)}</div>'
+        f'<div class="card-stat-row">{"".join(stats_row2)}</div>'
+        f'<span class="card-foot">Days virgin {days_virgin} · CPR from {source_date} · Session {session_date}</span>'
+        f"</div>"
+    )
+
+
+def render_cpr_cards(df: pd.DataFrame) -> None:
+    if df.empty:
+        st.info("No CPR rows match the current filters.")
+        return
+
+    cols_per_row = 3
+    for i in range(0, len(df), cols_per_row):
+        chunk = df.iloc[i : i + cols_per_row]
+        cols = st.columns(cols_per_row)
+        for c_idx, (_, row) in enumerate(chunk.iterrows()):
+            with cols[c_idx]:
+                _render_card_html(_cpr_card_html(row))
 
 
 def _normalize_cpr_results(df: pd.DataFrame) -> pd.DataFrame:
@@ -914,8 +1102,10 @@ Today's CPR from yesterday's OHLC. <strong>Virgin</strong> = price has not touch
 
     cached_cpr_df, cached_cpr_meta = load_cpr_results()
     cpr_meta = cached_cpr_meta or {}
+    active_cpr_meta = st.session_state.get("cpr_scan_meta") or cpr_meta
+    scanned_top = _cpr_scanned_label(active_cpr_meta, short=True)
 
-    c1, c2 = st.columns(2)
+    c1, c2 = st.columns([1.1, 1])
     with c1:
         cpr_timeframe = st.radio(
             "CPR timeframe",
@@ -924,7 +1114,7 @@ Today's CPR from yesterday's OHLC. <strong>Virgin</strong> = price has not touch
             key="cpr_timeframe",
         )
     with c2:
-        st.metric("Symbols in scan", len(scan_symbols))
+        _render_cpr_top_stats(symbol_count=len(scan_symbols), scanned_label=scanned_top)
 
     narrow_pct = _render_narrow_cpr_controls(cpr_meta)
 
@@ -1029,9 +1219,7 @@ Today's CPR from yesterday's OHLC. <strong>Virgin</strong> = price has not touch
         trend=trend_filter,
     )
 
-    scanned_label = meta.get("scanned_at_display") or format_scanned_at(
-        meta.get("scanned_at"), short=True
-    )
+    scanned_label = _cpr_scanned_label(meta, short=True)
     session_date = (
         filtered["session_date"].iloc[0]
         if not filtered.empty and "session_date" in filtered.columns
@@ -1045,7 +1233,6 @@ Today's CPR from yesterday's OHLC. <strong>Virgin</strong> = price has not touch
         v_n=_cpr_metric_count(filtered, "type", match="V+N"),
         narrow=_cpr_metric_count(filtered, "is_narrow"),
         narrow_pct=narrow_pct,
-        scanned_label=scanned_label or "—",
     )
 
     _render_cpr_session_panel(
@@ -1053,10 +1240,22 @@ Today's CPR from yesterday's OHLC. <strong>Virgin</strong> = price has not touch
         scan_tf=scan_tf,
         universe_choice=universe_choice,
         narrow_pct=narrow_pct,
+        scanned_label=scanned_label,
     )
 
     display = _style_cpr_results(filtered)
-    _render_cpr_table(display)
+
+    view = st.radio(
+        "View",
+        ["Cards", "Table"],
+        horizontal=True,
+        key="cpr_view_mode",
+        label_visibility="collapsed",
+    )
+    if view == "Cards":
+        render_cpr_cards(filtered)
+    else:
+        _render_cpr_table(display)
 
     chart_symbols = (
         filtered["symbol"].astype(str).tolist()

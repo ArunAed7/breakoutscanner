@@ -7,7 +7,8 @@ venv/
 .env
 
 # Local caches (downloaded on first run)
-data_cache/
+data_cache/*
+!data_cache/breakout_ml_model.pkl
 
 # IDE / OS
 .idea/

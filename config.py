@@ -10,8 +10,7 @@ DATA_DIR = ROOT_DIR / "data_cache"
 CACHE_DAILY = DATA_DIR / "prices_daily"
 CACHE_HOURLY = DATA_DIR / "prices_hourly"
 
-# Optional sibling caches (107-CPRScanner / 105-stockdna)
-CPR_CACHE = ROOT_DIR.parent / "107-CPRScanner" / "data_cache" / "prices"
+# Optional sibling caches (105-stockdna)
 STOCKDNA_UNIVERSE = ROOT_DIR.parent / "105-stockdna" / "data_cache" / "nifty500_symbols.csv"
 
 YFINANCE_SUFFIX = ".NS"
@@ -31,61 +30,10 @@ UNIVERSE_CHOICES: tuple[str, ...] = (UNIVERSE_NIFTY10, UNIVERSE_NIFTY50, UNIVERS
 SCAN_RESULTS_CSV = DATA_DIR / "scan_results.csv"
 SCAN_INFO_CSV = DATA_DIR / "scan_info.csv"
 SCAN_META_JSON = DATA_DIR / "scan_meta.json"
-CPR_SCAN_RESULTS_CSV = DATA_DIR / "cpr_scan_results.csv"
-CPR_SCAN_INFO_CSV = DATA_DIR / "cpr_scan_info.csv"
-CPR_SCAN_META_JSON = DATA_DIR / "cpr_scan_meta.json"
-CPR_TIMEFRAMES: tuple[str, ...] = ("Daily", "Weekly")
-
-
-def cpr_scan_paths(timeframe: str) -> tuple[Path, Path, Path]:
-    """Per-timeframe CPR cache paths: results CSV, info CSV, meta JSON."""
-    slug = timeframe.strip().lower()
-    return (
-        DATA_DIR / f"cpr_scan_results_{slug}.csv",
-        DATA_DIR / f"cpr_scan_info_{slug}.csv",
-        DATA_DIR / f"cpr_scan_meta_{slug}.json",
-    )
 
 LOOKBACK_DAYS = 400
 # Monthly bars need much deeper daily history (60-bar Donchian max + ATR warmup)
 MONTHLY_LOOKBACK_DAYS = 1500
-
-# CPR scanner — only previous session + today (minimal fetch through weekends)
-CPR_LOOKBACK_DAYS = 14
-CPR_WEEKLY_LOOKBACK_DAYS = 28
-
-# CPR width — fixed % thresholds (no multi-day history)
-WIDTH_HISTORY_DAYS = 365  # legacy; CPR scanner uses fixed thresholds only
-NARROW_PERCENTILE = 5.0
-WIDE_PERCENTILE = 97.0
-NARROW_CPR_PCT = 0.35
-WIDE_CPR_PCT = 0.60
-NARROW_PERCENTILE_PRESETS = (3.0, 5.0, 7.0, 10.0, 15.0)
-NARROW_PERCENTILE_MIN = 1.0
-NARROW_PERCENTILE_MAX = 20.0
-
-CPR_DEFAULT_SYMBOLS = [
-    "NIFTY",
-    "BANKNIFTY",
-    "VIX",
-    "RELIANCE",
-    "HDFCBANK",
-    "ICICIBANK",
-    "SBIN",
-    "TCS",
-    "INFY",
-    "BHARTIARTL",
-    "ITC",
-    "KOTAKBANK",
-    "LT",
-    "AXISBANK",
-    "BAJFINANCE",
-    "MARUTI",
-    "TITAN",
-    "HINDUNILVR",
-    "ASIANPAINT",
-    "SUNPHARMA",
-]
 HOURLY_PERIOD = "60d"
 BATCH_SIZE = 25
 

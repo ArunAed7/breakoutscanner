@@ -13,7 +13,6 @@ import yfinance as yf
 from config import (
     CACHE_DAILY,
     CACHE_HOURLY,
-    CPR_CACHE,
     DEFAULT_WATCHLIST,
     HOURLY_PERIOD,
     LOOKBACK_DAYS,
@@ -188,12 +187,6 @@ def _read_csv_cache(path: Path) -> pd.DataFrame:
 
 
 def _sibling_daily_cache(symbol: str) -> pd.DataFrame:
-    path = CPR_CACHE / f"{symbol.upper()}.csv"
-    if path.is_file():
-        try:
-            return _read_csv_cache(path)
-        except Exception:
-            pass
     return pd.DataFrame()
 
 

@@ -420,10 +420,61 @@ may be delayed or wrong.
     )
 
 
+@st.cache_data(ttl=1800)
+def get_git_version_info() -> dict:
+    import json
+    import subprocess
+    import urllib.request
+    from datetime import datetime
+    from pathlib import Path
+
+    # 1. Try local git command
+    try:
+        sha = subprocess.check_output(["git", "rev-parse", "--short", "HEAD"], stderr=subprocess.DEVNULL).decode("utf-8").strip()
+        date_str = subprocess.check_output(["git", "log", "-1", "--format=%cd", "--date=format:%Y-%m-%d %H:%M:%S"], stderr=subprocess.DEVNULL).decode("utf-8").strip()
+        if sha and date_str:
+            return {"version": sha, "updated_at": date_str}
+    except Exception:
+        pass
+
+    # 2. Try GitHub API (fallback)
+    try:
+        url = "https://api.github.com/repos/Elicherla01/breakoutscanner/commits/main"
+        req = urllib.request.Request(url, headers={"User-Agent": "Streamlit-App-Version-Checker"})
+        with urllib.request.urlopen(req, timeout=3) as response:
+            data = json.loads(response.read().decode())
+            sha = data.get("sha", "")[:7]
+            commit_date = data.get("commit", {}).get("committer", {}).get("date", "")
+            if commit_date:
+                dt = datetime.strptime(commit_date, "%Y-%m-%dT%H:%M:%SZ")
+                date_str = dt.strftime("%Y-%m-%d %H:%M:%S UTC")
+                return {"version": sha, "updated_at": date_str}
+    except Exception:
+        pass
+
+    # 3. Fallback to file modified time
+    try:
+        app_file = Path(__file__).resolve()
+        mtime = datetime.fromtimestamp(app_file.stat().st_mtime)
+        return {"version": "v1.2.0 (local)", "updated_at": mtime.strftime("%Y-%m-%d %H:%M:%S")}
+    except Exception:
+        pass
+
+    return {"version": "v1.2.0", "updated_at": "Unknown"}
+
+
 def _render_disclaimer_sidebar() -> None:
     st.divider()
     st.markdown("#### ⚖️ Legal disclaimer")
     st.markdown(_DISCLAIMER_SIDEBAR)
+    
+    # Render version information
+    info = get_git_version_info()
+    st.divider()
+    st.caption(
+        f"**App Version**: `{info['version']}`  \n"
+        f"**Last Updated**: {info['updated_at']}"
+    )
 
 
 def _render_summary_metrics(
@@ -607,6 +658,7 @@ Cached locally in <code>data_cache/scan_results.csv</code> and <code>data_cache/
 
 
 def _render_disclaimer_footer() -> None:
+    info = get_git_version_info()
     st.markdown(
         f"""
 ---
@@ -619,6 +671,8 @@ results. Use at your own risk.
 <a href="{DISCLAIMER_URL}" target="_blank" rel="noopener" style="color:#94a3b8;">Full disclaimer</a>
 ·
 <a href="https://breakoutscanner.streamlit.app/" style="color:#94a3b8;">Live app</a>
+·
+<span style="color:#64748b;">Version: <code>{info['version']}</code> (Updated: {info['updated_at']})</span>
 </p>
 """,
         unsafe_allow_html=True,

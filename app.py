@@ -1758,9 +1758,16 @@ universe = load_universe_symbols()
 with st.sidebar:
     st.header("Market Regime")
     if "market_regime" not in st.session_state:
-        from ml_engine import get_market_regime_classification
         with st.spinner("Classifying market regime..."):
-            st.session_state["market_regime"] = get_market_regime_classification()
+            try:
+                from ml_engine import get_market_regime_classification
+                st.session_state["market_regime"] = get_market_regime_classification()
+            except Exception:
+                st.session_state["market_regime"] = {
+                    "name": "Unknown (ML Offline)",
+                    "desc": "Regime classifier is offline (missing dependencies or initialization error).",
+                    "color": "#9aa0a6"
+                }
             
     regime = st.session_state["market_regime"]
     st.markdown(
@@ -1772,8 +1779,15 @@ with st.sidebar:
         unsafe_allow_html=True
     )
     if st.button("Refresh Market Regime", use_container_width=True, key="refresh_regime_btn"):
-        from ml_engine import get_market_regime_classification
-        st.session_state["market_regime"] = get_market_regime_classification()
+        try:
+            from ml_engine import get_market_regime_classification
+            st.session_state["market_regime"] = get_market_regime_classification()
+        except Exception:
+            st.session_state["market_regime"] = {
+                "name": "Unknown (ML Offline)",
+                "desc": "Regime classifier is offline.",
+                "color": "#9aa0a6"
+            }
         st.rerun()
 
     st.divider()
